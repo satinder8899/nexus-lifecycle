@@ -1,0 +1,95 @@
+apiVersion: sonatype.com/v1alpha1
+kind: NexusIQ
+metadata:
+  labels:
+    app: nexusiq
+  finalizers:
+    - helm.sdk.operatorframework.io/uninstall-release
+  name: nexusiq
+  namespace: nexus-lifecycle
+spec:
+  imagePullSecrets: []
+  deployment:
+    postStart: {}
+  fullnameOverride: ''
+  iq:
+    memory: 1Gi
+    configYaml:
+      createSampleData: true
+      logging:
+        appenders:
+          - logFormat: '%d{''yyyy-MM-dd HH:mm:ss,SSSZ''} %level [%thread] %X{username} %logger - %msg%n'
+            threshold: INFO
+            type: console
+          - archivedFileCount: 50
+            archivedLogFilenamePattern: /var/log/nexus-iq-server/clm-server-%d.log.gz
+            currentLogFilename: /var/log/nexus-iq-server/clm-server.log
+            logFormat: '%d{''yyyy-MM-dd HH:mm:ss,SSSZ''} %level [%thread] %X{username} %logger - %msg%n'
+            threshold: ALL
+            type: file
+        level: DEBUG
+        loggers:
+          org.apache.shiro.web.filter.authc.BasicHttpAuthenticationFilter: INFO
+          com.sonatype.insight.scan: INFO
+          com.sonatype.insight.audit:
+            appenders:
+              - archivedFileCount: 50
+                archivedLogFilenamePattern: /var/log/nexus-iq-server/audit-%d.log.gz
+                currentLogFilename: /var/log/nexus-iq-server/audit.log
+                type: file
+          org.eclipse.jetty: INFO
+          eu.medsea.mimeutil.MimeUtil2: INFO
+          org.apache.http.wire: ERROR
+          com.sonatype.insight.policy.violation:
+            appenders:
+              - threshold: INFO
+                type: console
+          org.eclipse.birt.report.engine.layout.pdf.font.FontConfigReader: WARN
+          org.apache.http: INFO
+      server:
+        adminConnectors:
+          - port: 8071
+            type: http
+        applicationConnectors:
+          - port: 8070
+            type: http
+        requestLog:
+          appenders:
+            - archivedFileCount: 50
+              archivedLogFilenamePattern: /var/log/nexus-iq-server/request-%d.log.gz
+              currentLogFilename: /var/log/nexus-iq-server/request.log
+              logFormat: '%clientHost %l %user [%date] "%requestURL" %statusCode %bytesSent %elapsedTime "%header{User-Agent}"'
+              type: file
+      sonatypeWork: /sonatype-work
+    name: nxiq
+    env:
+      - name: JAVA_OPTS
+        value: '-Djava.util.prefs.userRoot=$(SONATYPE_WORK)/javaprefs -Djavax.net.ssl.trustStore=/etc/nexus-iq-server/jks/keystore.jks -Dcom.redhat.fips=false'
+    adminPort: 8071
+    imagePullSecret: ''
+    applicationPort: 8070
+    licenseSecret: ''
+    imagePullPolicy: IfNotPresent
+    certificates: {}
+  ingress:
+    annotations: {}
+    enabled: false
+    hosts: []
+    path: /
+    tls: []
+  service:
+    annotations: {}
+    enabled: false
+    labels: {}
+    ports:
+      - name: nexus-service
+        port: 80
+        targetPort: 80
+  nameOverride: ''
+  deploymentStrategy:
+    type: Recreate
+  serviceAccount:
+    create: true
+  persistence:
+    accessMode: ReadWriteOnce
+    storageSize: 1Gi
