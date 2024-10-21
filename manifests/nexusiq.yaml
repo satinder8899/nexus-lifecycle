@@ -6,7 +6,7 @@ metadata:
   finalizers:
     - helm.sdk.operatorframework.io/uninstall-release
   name: nexusiq
-  namespace: nexus-lifecycle
+  namespace: lifecycle
 spec:
   imagePullSecrets: []
   deployment:
